@@ -100,8 +100,12 @@ class Video
 			'video_title' => (isset($title) ? $title : ''),
 			'video_desc' => (isset($desc) ? $desc : ''),
 			'magicContext' => (isset($magicContext) ? $magicContext : ''),
-            'filecontent' => '@'.$srcPath,
         );
+        if (function_exists('curl_file_create')) {
+            $data['filecontent'] = curl_file_create($srcPath);
+        } else {
+            $data['filecontent'] = '@'.$srcPath;
+        }
 
         $req = array(
             'url' => $url,
