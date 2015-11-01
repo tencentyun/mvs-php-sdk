@@ -60,7 +60,7 @@ class Video
             return array(
                     'httpcode' => $info['http_code'], 
                     'code' => self::VIDEO_NETWORK_ERROR, 
-                    'message' => 'network error', 'data' => array()
+                    'message' => $rsp, 'data' => array()
                 );
         }
     }
