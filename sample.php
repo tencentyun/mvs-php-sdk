@@ -7,18 +7,17 @@ use Qcloud_video\Video;
 
 $bucketName = 'abcde';
 
-
 $srcPath = './test.mp4';
 $dstPath = "/test.mp4";
 $dstPath_slice = "/test_slice.mp4";
 $remoteFolder = "/test/";
+$coverUrl = 'http://ceshi-1000027.file.myqcloud.com/1.jpg';
 
 //设置超时时间，单位秒
 Video::setTimeout(10);
 
 //创建目录
 $createFolderRet = Video::createFolder($bucketName, $remoteFolder);
-var_du
 //分片上传
 $sliceUploadRet = Video::upload_slice($srcPath, $bucketName, $dstPath_slice);
 //用户指定分片大小来分片上传
@@ -41,7 +40,7 @@ $updateRet = Video::updateFolder($bucketName, $remoteFolder, '{json:0}');
 var_dump($updateRet);
 
 //update
-$updateRet = Video::update($bucketName, $dstPath, '{json:1}');
+$updateRet = Video::update($bucketName, $dstPath, $coverUrl, '{json:1}');
 var_dump($updateRet);
 
 //statFolder
@@ -62,7 +61,7 @@ var_dump($delRet);
 $delRet = Video::del($bucketName, $dstPath_slice);
 var_dump($delRet);mp($createFolderRet);
 // 上传文件
-$uploadRet = Video::upload($srcPath, $bucketName,$dstPath);
+$uploadRet = Video::upload($srcPath, $bucketName,$dstPath, $coverUrl);
 var_dump($uploadRet);
 
 //end of script

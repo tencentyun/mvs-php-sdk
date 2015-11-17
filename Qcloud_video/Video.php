@@ -60,7 +60,7 @@ class Video
             return array(
                     'httpcode' => $info['http_code'], 
                     'code' => self::VIDEO_NETWORK_ERROR, 
-                    'message' => $rsp, 'data' => array()
+                    'message' => 'network error', 'data' => array()
                 );
         }
     }
@@ -70,13 +70,14 @@ class Video
      * @param  string  $srcPath      本地文件路径
      * @param  string  $bucketName   上传的bcuket名称
      * @param  string  $dstPath      上传的文件路径
+     * @param  string  $videoCover   视频封面的url
 	 * @param  string  $bizAttr      文件属性，业务端维护 
 	 * @param  string  $title        视频标题
 	 * @param  string  $desc         视频描述
 	 * @param  string  $magicContext 自定义回调参数
      * @return [type]                [description]
      */
-    public static function upload($srcPath, $bucketName, $dstPath, $bizAttr = null, $title = null, $desc = null, $magicContext = null) {
+    public static function upload($srcPath, $bucketName, $dstPath, $videoCover = null, $bizAttr = null, $title = null, $desc = null, $magicContext = null) {
 
         $srcPath = realpath($srcPath);
 
@@ -96,17 +97,19 @@ class Video
         $data = array(
             'op' => 'upload',
             'sha' => $sha1,
-            'biz_attr' => (isset($bizAttr) ? $bizAttr : ''),
-			'video_title' => (isset($title) ? $title : ''),
-			'video_desc' => (isset($desc) ? $desc : ''),
+            'video_cover'  => (isset($videoCover) ? $videoCover : ''),
+            'biz_attr'     => (isset($bizAttr) ? $bizAttr : ''),
+			'video_title'  => (isset($title) ? $title : ''),
+			'video_desc'   => (isset($desc) ? $desc : ''),
 			'magicContext' => (isset($magicContext) ? $magicContext : ''),
         );
+
         if (function_exists('curl_file_create')) {
             $data['filecontent'] = curl_file_create($srcPath);
         } else {
             $data['filecontent'] = '@'.$srcPath;
         }
-
+        
         $req = array(
             'url' => $url,
             'method' => 'post',
@@ -125,6 +128,7 @@ class Video
      * @param  string  $srcPath      本地文件路径
      * @param  string  $bucketName   上传的bcuket名称
      * @param  string  $dstPath      上传的文件路径
+     * @param  string  $videoCover   视频封面url
 	 * @param  string  $bizAttr      文件属性，业务端维护 
 	 * @param  string  $title        视频标题
 	 * @param  string  $desc         视频描述
@@ -134,7 +138,7 @@ class Video
      * @return [type]                [description]
      */
     public static function upload_slice(
-            $srcPath, $bucketName, $dstPath, 
+            $srcPath, $bucketName, $dstPath, $videoCover = null,
             $bizAttr = null, $title = null, $desc = null, $magicContext = null,
             $sliceSize = self::DEFAULT_SLICE_SIZE, $session = null) {
 
@@ -143,7 +147,7 @@ class Video
         $fileSize = filesize($srcPath);
         if ($fileSize < self::MIN_SLICE_FILE_SIZE) {
             return self::upload(
-                    $srcPath, $bucketName, $dstPath,
+                    $srcPath, $bucketName, $dstPath, $videoCover,
                     $bizAttr);
         }
 
@@ -163,7 +167,7 @@ class Video
 
         $ret = self::upload_prepare(
                 $fileSize, $sha1, $sliceSize, 
-                $sign, $url, $bizAttr, $title, $desc, $magicContext, $session);
+                $sign, $url, $bizAttr, $videoCover, $title, $desc, $magicContext, $session);
         if($ret['httpcode'] != 200
                 || $ret['code'] != 0) {
             return $ret;
@@ -194,15 +198,16 @@ class Video
     }
 
     private static function upload_prepare(
-            $fileSize, $sha1, $sliceSize,
-            $sign, $url, $bizAttr,$title = null, $desc = null, $magicContext = null, $session = null) {
+            $fileSize, $sha1, $sliceSize, 
+            $sign, $url, $bizAttr, $videoCover = null, $title = null, $desc = null, $magicContext = null, $session = null) {
         $data = array(
             'op' => 'upload_slice',
             'filesize' => $fileSize,
             'sha' => $sha1,
-			'video_title' => (isset($title) ? $title : ''),
-			'video_desc' => (isset($desc) ? $desc : ''),
-			'magicContext' => (isset($magicContext) ? $magicContext : ''),
+            'video_cover'  => (isset($videoCover) ? $videoCover : ''),
+            'video_title' => (isset($title) ? $title : ''),
+            'video_desc' => (isset($desc) ? $desc : ''),
+            'magicContext' => (isset($magicContext) ? $magicContext : ''),
         );
         isset($bizAttr) && 
             $data['biz_attr'] = $bizAttr;
@@ -457,20 +462,21 @@ class Video
     /*
      * 更新文件信息 update
      * @param  string  $bucketName
-     * @param  string  $path 路径
+     * @param  string  $path       路径
+     * @param  string  $videoCover 视频封面url
      *
      */
-    public static function update($bucketName, $path, 
-                  $bizAttr = null,$title = null, $desc = null) {
+    public static function update($bucketName, $path, $videoCover = null, 
+                  $bizAttr = null, $title = null, $desc = null) {
         if (preg_match('/^\//', $path) == 0) {
             $path = '/' . $path;
         }
 
-        return self::updateBase($bucketName, $path, $bizAttr, $title, $desc);
+        return self::updateBase($bucketName, $path, $bizAttr, $videoCover, $title, $desc);
     }
 
     private static function updateBase($bucketName, $path, 
-                  $bizAttr = null,$title = null, $desc = null) {
+                  $bizAttr = null, $videoCover = null, $title = null, $desc = null) {
 
         $path = self::videoUrlEncode($path);
         $expired = time() + self::EXPIRED_SECONDS;
@@ -478,11 +484,30 @@ class Video
         $sign = Auth::appSign_once(
                 $path, $bucketName);
 
+        $flag = 0;
+        if ($title != null && $desc != null && $bizAttr != null && $videoCover != null) {
+            $flag = Conf::eMaskAll;
+        } else {
+            if ($title != null) {
+                $flag |= Conf::eMaskTitle;
+            }
+            if ($desc != null) {
+                $flag |= Conf::eMaskDesc;
+            }
+            if ($bizAttr != null) {
+                $flag |= Conf::eMaskBizAttr;
+            }
+            if ($videoCover != null) {
+                $flag |= Conf::eMaskVideoCover;
+            }
+        }
         $data = array(
             'op' => 'update',
             'biz_attr' => $bizAttr,
-			'video_title' => $title,
-			'video_desc' => $desc,
+            'video_cover'  => $videoCover,
+            'video_title' => $title,
+            'video_desc' => $desc,
+            'flag' => $flag,
         );
         
         $data = json_encode($data);

@@ -13,6 +13,12 @@ class Conf
 	const APPID = 'your appid';
     const SECRET_ID = 'your secretId';
     const SECRET_KEY = 'your secretKey';
+    
+    const eMaskBizAttr = 0x01;
+    const eMaskTitle = 0x02;
+    const eMaskDesc = 0x04;
+    const eMaskVideoCover = 0x08;
+    const eMaskAll = 0x0F;
 	
     public static function getUA() {
         return 'QcloudPHP/'.self::PKG_VERSION.' ('.php_uname().')';
