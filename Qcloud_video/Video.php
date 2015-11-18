@@ -142,15 +142,14 @@ class Video
             $bizAttr = null, $title = null, $desc = null, $magicContext = null,
             $sliceSize = self::DEFAULT_SLICE_SIZE, $session = null) {
 
-        $srcPath = realpath($srcPath);
-
-        $fileSize = filesize($srcPath);
+        $fileSize = filesize(realpath($srcPath));
         if ($fileSize < self::MIN_SLICE_FILE_SIZE) {
             return self::upload(
                     $srcPath, $bucketName, $dstPath, $videoCover,
                     $bizAttr);
         }
 
+        $srcPath = realpath($srcPath);
         $dstPath = self::videoUrlEncode($dstPath);
         if (!file_exists($srcPath)) {
             return array(

@@ -18,6 +18,7 @@ Video::setTimeout(10);
 
 //创建目录
 $createFolderRet = Video::createFolder($bucketName, $remoteFolder);
+var_dump($createFolderRet);
 //分片上传
 $sliceUploadRet = Video::upload_slice($srcPath, $bucketName, $dstPath_slice);
 //用户指定分片大小来分片上传
@@ -59,7 +60,7 @@ var_dump($delRet);
 $delRet = Video::del($bucketName, $dstPath);
 var_dump($delRet);
 $delRet = Video::del($bucketName, $dstPath_slice);
-var_dump($delRet);mp($createFolderRet);
+var_dump($delRet);
 // 上传文件
 $uploadRet = Video::upload($srcPath, $bucketName,$dstPath, $coverUrl);
 var_dump($uploadRet);
